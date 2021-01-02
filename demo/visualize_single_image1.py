@@ -338,7 +338,7 @@ def process_one_image(img_path, shfPath, evaluate, model_path, class_list):
             predicted_boxes.score.values,
             predicted_boxes.label.values,
             max_output_size=predicted_boxes.shape[0],
-            iou_threshold=0.5)
+            iou_threshold=0.1)
         # import ipdb; ipdb.set_trace()
 
         # Recreate box dataframe
@@ -387,8 +387,11 @@ def process_one_image(img_path, shfPath, evaluate, model_path, class_list):
             total_FP = mc['total FP']
             total_groundTruths = mc['total positives']
             # Print AP per class
+            pre = total_TP/(total_TP + total_FP)
+            rec = total_TP/total_groundTruths
             print("Precision: {}: {}".format(c, total_TP/(total_TP + total_FP)))
             print('Recall: {}: {}'.format(c, total_TP/total_groundTruths))
+            print("F1-score: {}: {}".format((2*pre*rec)/(pre+rec)))
 
     df['geometry'] = df.apply(lambda x: convert_xy_tif(x, dataset), axis=1)
     df_res = gpd.GeoDataFrame(df[["xmin", "ymin", "xmax", "ymax","geometry"]], geometry='geometry')
@@ -407,7 +410,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--image_dir', default = "./dataset/testfol1", help='Path to directory containing images')
     parser.add_argument('--model_path', default="./csv_retinanet_10.pt", help='Path to model')
-    parser.add_argument('--class_list', default = "./dataset/classes.csv", help='Path to CSV file listing class names (see README)')
+    parser.add_argument('--class_list', default = "./dataset_not_aug/classes.csv", help='Path to CSV file listing class names (see README)')
     parser.add_argument("--image_path", type=str, help="Path to tif image")
     parser.add_argument("--shapefile_path", type=str, help="Path to shapefile coresponding the input image")
     parser.add_argument("--evaluate", type=bool, help="evaluate the testing image of your model with the shapefile path")
