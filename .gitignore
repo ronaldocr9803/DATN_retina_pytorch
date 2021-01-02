@@ -121,7 +121,7 @@ dataset_not_aug/images
 dataset_not_aug/labels
 dataset_not_aug/labels_xml
 dataset_not_aug/test_RSKA003603_0_
-
+dataset_not_aug/.DS_store
 # /dataset_not_aug
 
 data_tiff/*
