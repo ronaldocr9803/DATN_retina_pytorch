@@ -63,7 +63,7 @@ def generate_anchors(base_size=16, ratios=None, scales=None):
     areas = anchors[:, 2] * anchors[:, 3]
 
     # correct for ratios
-    anchors[:, 2] = np.sqrt(areas / np.repeat(ratios, len(scales)))
+    anchors[:, 2] = np.sqrt(areas / np.repeat(ratios, len(scales))) #height
     anchors[:, 3] = anchors[:, 2] * np.repeat(ratios, len(scales))
 
     # transform from (x_ctr, y_ctr, w, h) -> (x1, y1, x2, y2)

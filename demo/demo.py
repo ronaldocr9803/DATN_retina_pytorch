@@ -136,7 +136,7 @@ def detect_image(image_path, model_path, class_list):
             cv2.imwrite("./result/{}".format(img_name), image_orig)
             # cv2.imshow
 
-def get_prediction(model, img_arr, confidence):
+def get_prediction(model, img_arr, labels, confidence):
     """
     get_prediction
       parameters:
@@ -170,7 +170,7 @@ def get_prediction(model, img_arr, confidence):
 
     if largest_side * scale > max_side:
         scale = max_side / largest_side
-
+    # import ipdb; ipdb.set_trace()
     # resize the image with the computed scale
     img_arr = cv2.resize(img_arr, (int(round(cols * scale)), int(round((rows * scale)))))
     rows, cols, cns = img_arr.shape
@@ -199,45 +199,66 @@ def get_prediction(model, img_arr, confidence):
         scores, classification, transformed_anchors = model(image.cuda().float())
         # print('Elapsed time: {}'.format(time.time() - st))
         idxs = np.where(scores.cpu() > 0.5)
-        import ipdb; ipdb.set_trace()
-        for j in range(idxs[0].shape[0]):
-            bbox = transformed_anchors[idxs[0][j], :]
-
-            x1 = int(bbox[0] / scale)
-            y1 = int(bbox[1] / scale)
-            x2 = int(bbox[2] / scale)
-            y2 = int(bbox[3] / scale)
-            label_name = labels[int(classification[idxs[0][j]])]
-            # print(bbox, classification.shape)
-            score = scores[j]
-
-    pred_class = [CLASS_NAMES[i] for i in list(pred[0]['labels'].cpu().numpy())]
-    pred_boxes = pred[0]['boxes'].detach().cpu().numpy()
-    # pred_boxes = [[(i[0], i[1]), (i[2], i[3])] for i in list(pred[0]['boxes'].detach().cpu().numpy())]
-    pred_score = list(pred[0]['scores'].detach().cpu().numpy())
-
-    pred_t = [pred_score.index(x) for x in pred_score if x>confidence]
-    if len(pred_t) == 0:
-        return None
-    pred_t = pred_t[-1]
-    pred_boxes = pred_boxes[:pred_t+1]
-    pred_class = pred_class[:pred_t+1]
-    pred_score = pred_score[:pred_t+1]
-
-
-    # x1_lst, y1_lst, x2_lst, y2_lst = [np.expand_dims(pred[0]['boxes'].detach().cpu().numpy()[:,i], axis=1) for i in range(pred[0]['boxes'].detach().cpu().numpy().shape[1])] 
-    x1_lst, y1_lst, x2_lst, y2_lst = [np.expand_dims(pred_boxes[:,i], axis=1) for i in range(pred_boxes.shape[1])] 
-    # import ipdb; ipdb.set_trace()
-    image_detections = np.concatenate([
-        x1_lst, y1_lst, x2_lst, y2_lst,
-        np.expand_dims(pred_score, axis=1),
-        np.expand_dims(pred_class, axis=1)
-    ], axis=1)
+        # print([np.expand_dims(transformed_anchors[:,i], axis=1) for i in range(transformed_anchors.shape[1])])
+        # import ipdb; ipdb.set_trace()
+        # pred_score = scores.detach().cpu().numpy())
+        idxs_max = idxs[0].shape[0]
+        if idxs_max == 0:
+            return None
+        pred_boxes = transformed_anchors[:idxs_max].detach().cpu().numpy()/scale
+        pred_class = [labels[i] for i in classification[:idxs_max].detach().cpu().numpy()]
+        pred_score = scores[:idxs_max].detach().cpu().numpy()
+        x1_lst, y1_lst, x2_lst, y2_lst = [np.expand_dims(pred_boxes[:,i], axis=1) for i in range(pred_boxes.shape[1])] 
+        image_detections = np.concatenate([
+            x1_lst, y1_lst, x2_lst, y2_lst,
+            np.expand_dims(pred_score, axis=1),
+            np.expand_dims(pred_class, axis=1)
+        ], axis=1)
     
-    df = pd.DataFrame(image_detections,
+        df = pd.DataFrame(image_detections,
                       columns=["xmin", "ymin", "xmax", "ymax", "score", "label"])
-    # import ipdb; ipdb.set_trace()
-    return df        #pred_boxes, pred_class, pred_score
+        return df
+
+
+    #     pred_t = [scores.index(x) for x in pred_score if x>confidence]
+    #     for j in range(idxs[0].shape[0]):
+    #         bbox = transformed_anchors[idxs[0][j], :]
+
+    #         x1 = int(bbox[0] / scale)
+    #         y1 = int(bbox[1] / scale)
+    #         x2 = int(bbox[2] / scale)
+    #         y2 = int(bbox[3] / scale)
+    #         label_name = labels[int(classification[idxs[0][j]])]
+    #         # print(bbox, classification.shape)
+    #         score = scores[j]
+
+    # pred_class = [CLASS_NAMES[i] for i in list(pred[0]['labels'].cpu().numpy())]
+    # pred_boxes = pred[0]['boxes'].detach().cpu().numpy()
+    # # pred_boxes = [[(i[0], i[1]), (i[2], i[3])] for i in list(pred[0]['boxes'].detach().cpu().numpy())]
+    # pred_score = list(pred[0]['scores'].detach().cpu().numpy())
+
+    # pred_t = [pred_score.index(x) for x in pred_score if x>confidence]
+    # if len(pred_t) == 0:
+    #     return None
+    # pred_t = pred_t[-1]
+    # pred_boxes = pred_boxes[:pred_t+1]
+    # pred_class = pred_class[:pred_t+1]
+    # pred_score = pred_score[:pred_t+1]
+
+
+    # # x1_lst, y1_lst, x2_lst, y2_lst = [np.expand_dims(pred[0]['boxes'].detach().cpu().numpy()[:,i], axis=1) for i in range(pred[0]['boxes'].detach().cpu().numpy().shape[1])] 
+    # x1_lst, y1_lst, x2_lst, y2_lst = [np.expand_dims(pred_boxes[:,i], axis=1) for i in range(pred_boxes.shape[1])] 
+    # # import ipdb; ipdb.set_trace()
+    # image_detections = np.concatenate([
+    #     x1_lst, y1_lst, x2_lst, y2_lst,
+    #     np.expand_dims(pred_score, axis=1),
+    #     np.expand_dims(pred_class, axis=1)
+    # ], axis=1)
+    
+    # df = pd.DataFrame(image_detections,
+    #                   columns=["xmin", "ymin", "xmax", "ymax", "score", "label"])
+    # # import ipdb; ipdb.set_trace()
+    # return df        #pred_boxes, pred_class, pred_score
    
 
 def process_one_image(img_path, shfPath, evaluate, model_path, class_list):
@@ -283,9 +304,9 @@ def process_one_image(img_path, shfPath, evaluate, model_path, class_list):
         # import ipdb; ipdb.set_trace()
         # # Crop is RGB channel order, change to BGR
         # crop = crop[..., ::-1]
-        # crop = cv2.cvtColor(crop, cv2.COLOR_RGB2BGR)
+        crop = cv2.cvtColor(crop, cv2.COLOR_RGB2BGR)
         # pred_img1 = get_prediction(model, crop, confidence=0.7)
-        boxes = get_prediction(model, crop, confidence=0.7)
+        boxes = get_prediction(model, crop, labels, confidence=0.7)
         if boxes is None:
             continue
         boxes['xmin'] = pd.to_numeric(boxes['xmin'])
@@ -307,7 +328,7 @@ def process_one_image(img_path, shfPath, evaluate, model_path, class_list):
 
     predicted_boxes = pd.concat(predicted_boxes)
     # Apply NMS 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         print(
             "{} predictions in overlapping windows, applying non-max supression". \
             format(predicted_boxes.shape[0]))
