@@ -6,17 +6,6 @@ How to run project
 
 1. Download dataset: shorturl.at/anuv2
 2. unzip dataset above to dataset_not_aug folder
-3.
-
-![img3](https://github.com/yhenon/pytorch-retinanet/blob/master/images/3.jpg)
-![img5](https://github.com/yhenon/pytorch-retinanet/blob/master/images/5.jpg)
-
-Pytorch  implementation of RetinaNet object detection as described in [Focal Loss for Dense Object Detection](https://arxiv.org/abs/1708.02002) by Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He and Piotr Dollár.
-
-This implementation is primarily designed to be easy to read and simple to modify.
-
-## Results
-Currently, this repo achieves 33.5% mAP at 600px resolution with a Resnet-50 backbone. The published result is 34.0% mAP. The difference is likely due to the use of Adam optimizer instead of SGD with weight decay.
 
 ## Installation
 
@@ -49,6 +38,8 @@ sh train.sh
 ## Demo
 
 This part will run an entire satelite image in (have size 3874 x 3100)
+
+Downlaod original satelite image (for demo): shorturl.at/fotyP
 
 ```
 sh demo.sh
