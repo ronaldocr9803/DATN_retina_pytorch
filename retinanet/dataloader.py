@@ -18,7 +18,9 @@ import skimage.color
 import skimage
 
 from future.utils import raise_from
-
+import imgaug as ia
+import imgaug.augmenters as iaa
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 
 
 from PIL import Image
@@ -379,26 +381,39 @@ class Resizer(object):
         return {'img': torch.from_numpy(new_image), 'annot': torch.from_numpy(annots), 'scale': scale}
 
 
+
+
 class Augmenter(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample, flip_x=0.5):
-
+        # import ipdb; ipdb.set_trace()
         if np.random.rand() < flip_x:
             image, annots = sample['img'], sample['annot']
-            image = image[:, ::-1, :]
-
-            rows, cols, channels = image.shape
-
-            x1 = annots[:, 0].copy()
-            x2 = annots[:, 2].copy()
+            bbox_before = [BoundingBox(x1=annots[i][0], y1=annots[i][1], x2=annots[i][2], y2=annots[i][3]) for i in range(len(annots))]
+            bbs = BoundingBoxesOnImage(bbox_before, shape=image.shape)
+            seq = iaa.Sequential([
+                iaa.Multiply((1.2, 1.5))])
+            image_aug, bbs_aug = seq(image=image, bounding_boxes=bbs)
+            new_annots = [[bbs_aug.bounding_boxes[i].x1, bbs_aug.bounding_boxes[i].y1, bbs_aug.bounding_boxes[i].x2, bbs_aug.bounding_boxes[i].y2] for i in range(len(annots))]
+            new_annots = np.c_[ new_annots, np.zeros(len(new_annots)) ]
+            # print(sample[1])
             
-            x_tmp = x1.copy()
+            # image = image[:, ::-1, :]
 
-            annots[:, 0] = cols - x2
-            annots[:, 2] = cols - x_tmp
+            # rows, cols, channels = image.shape
 
-            sample = {'img': image, 'annot': annots}
+            # x1 = annots[:, 0].copy()
+            # x2 = annots[:, 2].copy()
+            
+            # x_tmp = x1.copy()
+
+            # annots[:, 0] = cols - x2
+            # annots[:, 2] = cols - x_tmp
+
+            # sample = {'img': image, 'annot': annots}
+            # print(new_annots)
+            sample = {'img': image_aug, 'annot': new_annots}
 
         return sample
 
