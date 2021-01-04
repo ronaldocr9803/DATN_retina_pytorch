@@ -64,7 +64,7 @@ def main(args=None):
             raise ValueError('Must provide --csv_classes when training on COCO,')
 
         dataset_train = CSVDataset(train_file=parser.csv_train, class_list=parser.csv_classes,
-                                   transform=transforms.Compose([Normalizer(), Augmenter(), Resizer()]))
+                                   transform=transforms.Compose([Augmenter(), Normalizer(), Resizer()]))
 
         if parser.csv_val is None:
             dataset_val = None
@@ -120,6 +120,8 @@ def main(args=None):
     retinanet.module.freeze_bn()
 
     print('Num training images: {}'.format(len(dataset_train)))
+    print("number of image validation: {}".format(len(dataset_val)))
+
     # import ipdb; ipdb.set_trace()
     for epoch_num in range(parser.epochs):
 
@@ -189,6 +191,7 @@ def main(args=None):
             print('Evaluating dataset')
 
             mAP = csv_eval.evaluate(dataset_val, retinanet)
+            tb.add_scalar('Average Precision', mAP[0][0], epoch_num)
 
         scheduler.step(np.mean(epoch_loss))
 
