@@ -191,6 +191,8 @@ class CSVDataset(Dataset):
         for line, row in enumerate(csv_reader):
             line += 1
 
+
+
             try:
                 class_name, class_id = row
             except ValueError:
@@ -263,6 +265,8 @@ class CSVDataset(Dataset):
             if line == 0:
                 continue
             line += 1
+            # if line == 70:
+            #     break
 
             try:
                 img_file, x1, y1, x2, y2, class_name = row[:6]
@@ -389,34 +393,44 @@ class Augmenter(object):
     def __call__(self, sample, flip_x=0.5):
         # import ipdb; ipdb.set_trace()
         if np.random.rand() < flip_x:
+            image, annots = sample['img'], sample['annot']            
+            image = image[:, ::-1, :]
+
+            rows, cols, channels = image.shape
+
+            x1 = annots[:, 0].copy()
+            x2 = annots[:, 2].copy()
+            
+            x_tmp = x1.copy()
+
+            annots[:, 0] = cols - x2
+            annots[:, 2] = cols - x_tmp
+
+            sample = {'img': image, 'annot': annots}
+
+
+        return sample
+
+class Augmenter_Custom(object):
+
+    def __call__(self, sample, flip_x=0.5):
+        if np.random.rand() < flip_x:
             image, annots = sample['img'], sample['annot']
             bbox_before = [BoundingBox(x1=annots[i][0], y1=annots[i][1], x2=annots[i][2], y2=annots[i][3]) for i in range(len(annots))]
             bbs = BoundingBoxesOnImage(bbox_before, shape=image.shape)
             seq = iaa.Sequential([
+                iaa.Sometimes(0.25, iaa.GaussianBlur(sigma=(0, 3.0))),
+                iaa.SomeOf(1, [
+                    iaa.Fliplr(),
+                    iaa.Flipud()                  
+                ]),
                 iaa.Multiply((1.2, 1.5))])
             image_aug, bbs_aug = seq(image=image, bounding_boxes=bbs)
             new_annots = [[bbs_aug.bounding_boxes[i].x1, bbs_aug.bounding_boxes[i].y1, bbs_aug.bounding_boxes[i].x2, bbs_aug.bounding_boxes[i].y2] for i in range(len(annots))]
             new_annots = np.c_[ new_annots, np.zeros(len(new_annots)) ]
-            # print(sample[1])
-            
-            # image = image[:, ::-1, :]
-
-            # rows, cols, channels = image.shape
-
-            # x1 = annots[:, 0].copy()
-            # x2 = annots[:, 2].copy()
-            
-            # x_tmp = x1.copy()
-
-            # annots[:, 0] = cols - x2
-            # annots[:, 2] = cols - x_tmp
-
-            # sample = {'img': image, 'annot': annots}
-            # print(new_annots)
             sample = {'img': image_aug, 'annot': new_annots}
 
-        return sample
-
+        return sample 
 
 class Normalizer(object):
 
