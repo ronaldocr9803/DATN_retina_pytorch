@@ -4,7 +4,7 @@ Vietnamese below
 
 How to run project 
 
-1. Download dataset: shorturl.at/anuv2
+1. [Download dataset](http://shorturl.at/anuv2)
 2. unzip dataset above to dataset_not_aug folder
 
 ## Installation
@@ -39,7 +39,7 @@ sh train.sh
 
 This part will run an entire satelite image in (have size 3874 x 3100)
 
-Downlaod original satelite image (for demo): shorturl.at/fotyP
+[Download original satelite image (for demo)](http://shorturl.at/fotyP)
 
 ```
 sh demo.sh
